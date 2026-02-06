@@ -1,103 +1,127 @@
+# Writeup - Máquina Grooti
 
-Maquina
+## Despliegue y Reconocimiento
 
-![[Pasted image 20260206153124.png]]
-Primero tenemos que desplegar la maquina para empezar a operar
+Primero tenemos que desplegar la máquina para empezar a operar.
 
-Reconocimiento
+![Despliegue de la máquina](images/Pasted%20image%2020260206153124.png)
 
-![[Pasted image 20260206153248.png]]
-Obtenemos esto del escaneo de nmap, pasare a enumerar la pagina web
+Comenzamos con el escaneo de puertos. Obtenemos esto del escaneo de Nmap:
 
-![[Pasted image 20260206153351.png]]
-Tenemos esto en la pagina web
+![Escaneo de Nmap](images/Pasted%20image%2020260206153248.png)
 
-![[Pasted image 20260206153442.png]]
-En el directorio de imagenes tenemos esta contrasena, y nos dice que encontremos donde ponerla
-(password1)
+Pasaré a enumerar la página web. Tenemos esto en el index:
 
-![[Pasted image 20260206153623.png]]
-En el codigo fuente tenemos esta nota que parece ser el nombre de algun usuario a nivel de sistema
+![Página web principal](images/Pasted%20image%2020260206153351.png)
 
-Probare el usuario rocket y la contrasena que encontramos para conectarme a la base de datos
+En el directorio de imágenes encontramos esta contraseña, y nos dice que encontremos dónde ponerla: `password1`.
 
-![[Pasted image 20260206153821.png]]
-Y pudimos entrar vamos a ver que podemos enumerar aqui dentro
+![Contraseña encontrada](images/Pasted%20image%2020260206153442.png)
 
-![[Pasted image 20260206153853.png]]
-Y tenemos esta base de datos que parece ser interesante
+Revisando el código fuente, tenemos esta nota que parece ser el nombre de algún usuario a nivel de sistema (`rocket`).
 
-![[Pasted image 20260206154144.png]]
-Y tenemos esto que son rutas, la ultima es la que no teniamos de antes, asi que la probare en el navegador
+![Código fuente nota](images/Pasted%20image%2020260206153623.png)
 
-![[Pasted image 20260206154749.png]]
-Tenemos esto al acceder a la ruta que descubrimos
+## Acceso Inicial
 
+Probaré el usuario `rocket` y la contraseña que encontramos para conectarme a la base de datos (MongoDB/MySQL, etc).
 
-![[Pasted image 20260206155743.png]]
-Al poner whoami y un numero random del 1-100 se me decargar un archivo llamado password100.txt
+![Conexión exitosa a DB](images/Pasted%20image%2020260206153821.png)
 
-![[Pasted image 20260206155831.png]]
-Nos devuelve el mismo output
+Pudimos entrar. Vamos a ver qué podemos enumerar aquí dentro.
 
+![Enumeración de bases de datos](images/Pasted%20image%2020260206153853.png)
 
-![[Pasted image 20260206155904.png]]
-Lo que se me ocurrio para ir mas rapido 1 por 1 fue abrir el burpsuite e iterar 1 por 1 
+Tenemos esta base de datos que parece ser interesante. Al explorarla, encontramos rutas. La última es la que no teníamos antes, así que la probaré en el navegador.
 
-![[Pasted image 20260206155940.png]]
-y el numero 16 me dio una respuesta diferente a las demas
+![Rutas encontradas en DB](images/Pasted%20image%2020260206154144.png)
 
-![[Pasted image 20260206160005.png]]
-Cuando veo la respuesta parece ser un archivo zip
+Tenemos esto al acceder a la ruta que descubrimos:
 
-![[Pasted image 20260206160033.png]]
-Asi que ahora poniendo el 16 se me descargar un archivo zip
+![Acceso a ruta oculta](images/Pasted%20image%2020260206154749.png)
 
-![[Pasted image 20260206160125.png]]
-Aqui tenemos el archivo
+## Explotación
 
-![[Pasted image 20260206160159.png]]
-Parece que necesita una contrasena
+Al poner `whoami` y un número random del 1-100 se me descarga un archivo llamado `password100.txt`.
 
-probare la contrasena que descubrimos al inicio
+![Descarga de archivo txt](images/Pasted%20image%2020260206155743.png)
 
-![[Pasted image 20260206160401.png]]
-Funciono, vere que hay dentro del txt
+El contenido nos devuelve el mismo output:
 
-![[Pasted image 20260206160429.png]]
-parece que tenemos una lista de contrasena seguro son para hacer fuerza bruta con ssh
+![Contenido del txt](images/Pasted%20image%2020260206155831.png)
 
-![[Pasted image 20260206160539.png]]
-Y efectivamente, tenemos las credenciales de grooti para ssh (YoSoYgRoOt)
+Lo que se me ocurrió para ir más rápido, en lugar de ir 1 por 1, fue abrir el **Burp Suite** e iterar.
 
-![[Pasted image 20260206160645.png]]
-Estamos dentro
+![Intruder en Burp Suite](images/Pasted%20image%2020260206155904.png)
 
+El número **16** me dio una respuesta diferente a las demás (diferente longitud).
 
-![[Pasted image 20260206164653.png]]
-Enumerando por tareas cron me encontre con esta 
+![Respuesta diferente payload 16](images/Pasted%20image%2020260206155940.png)
 
-![[Pasted image 20260206164735.png]]
-Tenemos permisos de lectura sobre el archivo cleanup.sh
+Cuando veo la respuesta parece ser un archivo ZIP.
 
-![[Pasted image 20260206164808.png]]
-Dentro del archivo vemos que esta ejecutando otro script que se llama malicious.sh
+![Cabecera archivo ZIP](images/Pasted%20image%2020260206160005.png)
 
-![[Pasted image 20260206164849.png]]
-aqui vemos que tenemos permisos de escritura dentro del archivo malicious.sh
+Así que ahora poniendo el 16 se me descarga un archivo ZIP.
 
-![[Pasted image 20260206165038.png]]
-Voy a agregar esta ultima linea mandandome una reverse shell 
+![Descarga del ZIP](images/Pasted%20image%2020260206160033.png)
 
-![[Pasted image 20260206165121.png]]
-Nos ponemos en escucha
+Aquí tenemos el archivo descargado:
 
-![[Pasted image 20260206165213.png]]
-Y asi obtenemos una shell como root
+![Archivo zip en local](images/Pasted%20image%2020260206160125.png)
 
-Grooti
-![[Pasted image 20260206165251.png]]
+Parece que necesita una contraseña. Probaré la contraseña que descubrimos al inicio (`password1`).
 
+![Descompresión con contraseña](images/Pasted%20image%2020260206160159.png)
+
+Funcionó. Veré qué hay dentro del `.txt`.
+
+![Leyendo contenido extraído](images/Pasted%20image%2020260206160401.png)
+
+Parece que tenemos una lista de contraseñas, seguro son para hacer fuerza bruta con SSH.
+
+![Lista de contraseñas](images/Pasted%20image%2020260206160429.png)
+
+Y efectivamente, tras probarlas tenemos las credenciales de **grooti** para SSH (`YoSoYgRoOt`).
+
+![Login SSH exitoso](images/Pasted%20image%2020260206160539.png)
+
+Estamos dentro.
+
+![Shell de usuario](images/Pasted%20image%2020260206160645.png)
+
+## Escalada de Privilegios
+
+Enumerando por tareas cron me encontré con esta:
+
+![Enumeración Cron](images/Pasted%20image%2020260206164653.png)
+
+Tenemos permisos de lectura sobre el archivo `cleanup.sh`.
+
+![Permisos cleanup.sh](images/Pasted%20image%2020260206164735.png)
+
+Dentro del archivo vemos que está ejecutando otro script que se llama `malicious.sh`.
+
+![Cat cleanup.sh](images/Pasted%20image%2020260206164808.png)
+
+Aquí vemos que tenemos **permisos de escritura** dentro del archivo `malicious.sh`.
+
+![Permisos de escritura malicious.sh](images/Pasted%20image%2020260206164849.png)
+
+Voy a agregar esta última línea mandándome una reverse shell al final del archivo.
+
+![Inyectando Reverse Shell](images/Pasted%20image%2020260206165038.png)
+
+Nos ponemos en escucha con Netcat (`nc -lvnp <puerto>`).
+
+![Netcat listening](images/Pasted%20image%2020260206165121.png)
+
+Y así obtenemos una shell como **root**.
+
+![Root Shell](images/Pasted%20image%2020260206165213.png)
+
+**Flag de Root:**
+![Flag Root](images/Pasted%20image%2020260206165251.png)
 
 
 
